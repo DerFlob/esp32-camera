@@ -36,8 +36,8 @@ static inline int gpio_ll_get_level(gpio_dev_t *hw, int gpio_num)
 
 static const char *TAG = "esp32 ll_cam";
 
-#define I2S_ISR_ENABLE(i) {I2S0.int_clr.i = 1;I2S0.int_ena.i = 1;}
-#define I2S_ISR_DISABLE(i) {I2S0.int_ena.i = 0;I2S0.int_clr.i = 1;}
+#define I2S_ISR_ENABLE(i) {I2S1.int_clr.i = 1;I2S1.int_ena.i = 1;}
+#define I2S_ISR_DISABLE(i) {I2S1.int_ena.i = 0;I2S1.int_clr.i = 1;}
 
 typedef union {
     struct {
@@ -211,12 +211,12 @@ static void IRAM_ATTR ll_cam_dma_isr(void *arg)
     cam_obj_t *cam = (cam_obj_t *)arg;
     BaseType_t HPTaskAwoken = pdFALSE;
 
-    typeof(I2S0.int_st) status = I2S0.int_st;
+    typeof(I2S1.int_st) status = I2S1.int_st;
     if (status.val == 0) {
         return;
     }
 
-    I2S0.int_clr.val = status.val;
+    I2S1.int_clr.val = status.val;
 
     if (status.in_suc_eof) {
         ll_cam_send_event(cam, CAM_IN_SUC_EOF_EVENT, &HPTaskAwoken);
@@ -229,9 +229,9 @@ static void IRAM_ATTR ll_cam_dma_isr(void *arg)
 
 bool ll_cam_stop(cam_obj_t *cam)
 {
-    I2S0.conf.rx_start = 0;
+    I2S1.conf.rx_start = 0;
     I2S_ISR_DISABLE(in_suc_eof);
-    I2S0.in_link.stop = 1;
+    I2S1.in_link.stop = 1;
     return true;
 }
 
@@ -249,68 +249,68 @@ esp_err_t ll_cam_deinit(cam_obj_t *cam)
 
 bool ll_cam_start(cam_obj_t *cam, int frame_pos)
 {
-    I2S0.conf.rx_start = 0;
+    I2S1.conf.rx_start = 0;
 
     I2S_ISR_ENABLE(in_suc_eof);
 
-    I2S0.conf.rx_reset = 1;
-    I2S0.conf.rx_reset = 0;
-    I2S0.conf.rx_fifo_reset = 1;
-    I2S0.conf.rx_fifo_reset = 0;
-    I2S0.lc_conf.in_rst = 1;
-    I2S0.lc_conf.in_rst = 0;
-    I2S0.lc_conf.ahbm_fifo_rst = 1;
-    I2S0.lc_conf.ahbm_fifo_rst = 0;
-    I2S0.lc_conf.ahbm_rst = 1;
-    I2S0.lc_conf.ahbm_rst = 0;
+    I2S1.conf.rx_reset = 1;
+    I2S1.conf.rx_reset = 0;
+    I2S1.conf.rx_fifo_reset = 1;
+    I2S1.conf.rx_fifo_reset = 0;
+    I2S1.lc_conf.in_rst = 1;
+    I2S1.lc_conf.in_rst = 0;
+    I2S1.lc_conf.ahbm_fifo_rst = 1;
+    I2S1.lc_conf.ahbm_fifo_rst = 0;
+    I2S1.lc_conf.ahbm_rst = 1;
+    I2S1.lc_conf.ahbm_rst = 0;
 
-    I2S0.rx_eof_num = cam->dma_half_buffer_size / sizeof(dma_elem_t);
-    I2S0.in_link.addr = ((uint32_t)&cam->dma[0]) & 0xfffff;
+    I2S1.rx_eof_num = cam->dma_half_buffer_size / sizeof(dma_elem_t);
+    I2S1.in_link.addr = ((uint32_t)&cam->dma[0]) & 0xfffff;
 
-    I2S0.in_link.start = 1;
-    I2S0.conf.rx_start = 1;
+    I2S1.in_link.start = 1;
+    I2S1.conf.rx_start = 1;
     return true;
 }
 
 esp_err_t ll_cam_config(cam_obj_t *cam, const camera_config_t *config)
 {
     // Enable and configure I2S peripheral
-    periph_module_enable(PERIPH_I2S0_MODULE);
+    periph_module_enable(PERIPH_I2S1_MODULE);
 
-    I2S0.conf.rx_reset = 1;
-    I2S0.conf.rx_reset = 0;
-    I2S0.conf.rx_fifo_reset = 1;
-    I2S0.conf.rx_fifo_reset = 0;
-    I2S0.lc_conf.in_rst = 1;
-    I2S0.lc_conf.in_rst = 0;
-    I2S0.lc_conf.ahbm_fifo_rst = 1;
-    I2S0.lc_conf.ahbm_fifo_rst = 0;
-    I2S0.lc_conf.ahbm_rst = 1;
-    I2S0.lc_conf.ahbm_rst = 0;
+    I2S1.conf.rx_reset = 1;
+    I2S1.conf.rx_reset = 0;
+    I2S1.conf.rx_fifo_reset = 1;
+    I2S1.conf.rx_fifo_reset = 0;
+    I2S1.lc_conf.in_rst = 1;
+    I2S1.lc_conf.in_rst = 0;
+    I2S1.lc_conf.ahbm_fifo_rst = 1;
+    I2S1.lc_conf.ahbm_fifo_rst = 0;
+    I2S1.lc_conf.ahbm_rst = 1;
+    I2S1.lc_conf.ahbm_rst = 0;
 
-    I2S0.conf.rx_slave_mod = 1;
-    I2S0.conf.rx_right_first = 0;
-    I2S0.conf.rx_msb_right = 0;
-    I2S0.conf.rx_msb_shift = 0;
-    I2S0.conf.rx_mono = 0;
-    I2S0.conf.rx_short_sync = 0;
+    I2S1.conf.rx_slave_mod = 1;
+    I2S1.conf.rx_right_first = 0;
+    I2S1.conf.rx_msb_right = 0;
+    I2S1.conf.rx_msb_shift = 0;
+    I2S1.conf.rx_mono = 0;
+    I2S1.conf.rx_short_sync = 0;
 
-    I2S0.conf2.lcd_en = 1;
-    I2S0.conf2.camera_en = 1;
+    I2S1.conf2.lcd_en = 1;
+    I2S1.conf2.camera_en = 1;
 
     // Configure clock divider
-    I2S0.clkm_conf.clkm_div_a = 0;
-    I2S0.clkm_conf.clkm_div_b = 0;
-    I2S0.clkm_conf.clkm_div_num = 2;
+    I2S1.clkm_conf.clkm_div_a = 0;
+    I2S1.clkm_conf.clkm_div_b = 0;
+    I2S1.clkm_conf.clkm_div_num = 2;
     
-    I2S0.fifo_conf.dscr_en = 1;
-    I2S0.fifo_conf.rx_fifo_mod = sampling_mode;
-    I2S0.fifo_conf.rx_fifo_mod_force_en = 1;
+    I2S1.fifo_conf.dscr_en = 1;
+    I2S1.fifo_conf.rx_fifo_mod = sampling_mode;
+    I2S1.fifo_conf.rx_fifo_mod_force_en = 1;
 
-    I2S0.conf_chan.rx_chan_mod = 1;
-    I2S0.sample_rate_conf.rx_bits_mod = 0;
-    I2S0.timing.val = 0;
-    I2S0.timing.rx_dsync_sw = 1;
+    I2S1.conf_chan.rx_chan_mod = 1;
+    I2S1.sample_rate_conf.rx_bits_mod = 0;
+    I2S1.timing.val = 0;
+    I2S1.timing.rx_dsync_sw = 1;
 
     return ESP_OK;
 }
@@ -340,17 +340,17 @@ esp_err_t ll_cam_set_pin(cam_obj_t *cam, const camera_config_t *config)
     PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[config->pin_pclk], PIN_FUNC_GPIO);
     gpio_set_direction(config->pin_pclk, GPIO_MODE_INPUT);
     gpio_set_pull_mode(config->pin_pclk, GPIO_FLOATING);
-    gpio_matrix_in(config->pin_pclk, I2S0I_WS_IN_IDX, false);
+    gpio_matrix_in(config->pin_pclk, I2S1I_WS_IN_IDX, false);
 
     PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[config->pin_vsync], PIN_FUNC_GPIO);
     gpio_set_direction(config->pin_vsync, GPIO_MODE_INPUT);
     gpio_set_pull_mode(config->pin_vsync, GPIO_FLOATING);
-    gpio_matrix_in(config->pin_vsync, I2S0I_V_SYNC_IDX, false);
+    gpio_matrix_in(config->pin_vsync, I2S1I_V_SYNC_IDX, false);
 
     PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[config->pin_href], PIN_FUNC_GPIO);
     gpio_set_direction(config->pin_href, GPIO_MODE_INPUT);
     gpio_set_pull_mode(config->pin_href, GPIO_FLOATING);
-    gpio_matrix_in(config->pin_href, I2S0I_H_SYNC_IDX, false);
+    gpio_matrix_in(config->pin_href, I2S1I_H_SYNC_IDX, false);
 
     int data_pins[8] = {
         config->pin_d0, config->pin_d1, config->pin_d2, config->pin_d3, config->pin_d4, config->pin_d5, config->pin_d6, config->pin_d7,
@@ -359,16 +359,16 @@ esp_err_t ll_cam_set_pin(cam_obj_t *cam, const camera_config_t *config)
         PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[data_pins[i]], PIN_FUNC_GPIO);
         gpio_set_direction(data_pins[i], GPIO_MODE_INPUT);
         gpio_set_pull_mode(data_pins[i], GPIO_FLOATING);
-        gpio_matrix_in(data_pins[i], I2S0I_DATA_IN0_IDX + i, false);
+        gpio_matrix_in(data_pins[i], I2S1I_DATA_IN0_IDX + i, false);
     }
 
-    gpio_matrix_in(0x38, I2S0I_H_ENABLE_IDX, false);
+    gpio_matrix_in(0x38, I2S1I_H_ENABLE_IDX, false);
     return ESP_OK;
 }
 
 esp_err_t ll_cam_init_isr(cam_obj_t *cam)
 {
-    return esp_intr_alloc(ETS_I2S0_INTR_SOURCE, ESP_INTR_FLAG_LOWMED | ESP_INTR_FLAG_IRAM, ll_cam_dma_isr, cam, &cam->cam_intr_handle);
+    return esp_intr_alloc(ETS_I2S1_INTR_SOURCE, ESP_INTR_FLAG_LOWMED | ESP_INTR_FLAG_IRAM, ll_cam_dma_isr, cam, &cam->cam_intr_handle);
 }
 
 void ll_cam_do_vsync(cam_obj_t *cam)
@@ -517,6 +517,6 @@ esp_err_t ll_cam_set_sample_mode(cam_obj_t *cam, pixformat_t pix_format, uint32_
         ESP_LOGE(TAG, "Requested format is not supported");
         return ESP_ERR_NOT_SUPPORTED;
     }
-    I2S0.fifo_conf.rx_fifo_mod = sampling_mode;
+    I2S1.fifo_conf.rx_fifo_mod = sampling_mode;
     return ESP_OK;
 }
